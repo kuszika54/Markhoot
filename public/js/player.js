@@ -11,6 +11,7 @@ const qText = document.getElementById('qText');
 const choicesEl = document.getElementById('choices');
 const timerEl = document.getElementById('timer');
 const statusEl = document.getElementById('status');
+const timebar = document.getElementById('timebarPlayer');
 const finalCard = document.getElementById('finalCard');
 const pf1Name = document.getElementById('pf1Name');
 const pf1Score = document.getElementById('pf1Score');
@@ -84,6 +85,11 @@ function startTimer(){
     const ms = Math.max(0, endsAt - Date.now());
     const sec = Math.ceil(ms/1000);
     timerEl.textContent = `Idő: ${sec} mp`;
+    if (timebar) {
+      const total = Math.max(1, sec);
+      const pct = Math.max(0, Math.min(100, (ms / (ms + 1)) * 100));
+      timebar.style.width = `${pct}%`;
+    }
     if (ms <= 0) stopTimer();
   }, 250);
 }

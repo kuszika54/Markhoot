@@ -18,6 +18,7 @@ const btnUpload = document.getElementById('btnUpload');
 const pinEl = document.getElementById('pin');
 const ipsEl = document.getElementById('ips');
 const joinUrlEl = document.getElementById('joinUrl');
+const timebar = document.getElementById('timebarHost');
 const finalCard = document.getElementById('finalCard');
 const final1Name = document.getElementById('final1Name');
 const final1Score = document.getElementById('final1Score');
@@ -71,6 +72,12 @@ function startTimer() {
     const ms = Math.max(0, currentEndsAt - Date.now());
     const sec = Math.ceil(ms/1000);
     progressEl.textContent = `Hátralévő idő: ${sec} mp`;
+    if (timebar && questionEl.innerHTML) {
+      const total = Math.max(1, sec); // approximate; visual only
+      const qLeft = Math.max(0, ms);
+      const pct = Math.max(0, Math.min(100, (qLeft / (qLeft + 1)) * 100));
+      timebar.style.width = `${pct}%`;
+    }
     if (ms <= 0) stopTimer();
   }, 250);
 }
