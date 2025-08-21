@@ -13,16 +13,28 @@
     <div id="joinCard" class="card">
       <label>Név: <input id="name" maxlength="20" /></label>
       <label>PIN: <input id="pin" maxlength="6" /></label>
+      <label>Csapat (ha engedélyezve):
+        <select id="team">
+          <option value="">— Válassz —</option>
+          <option value="Piros">Piros</option>
+          <option value="Kék">Kék</option>
+          <option value="Zöld">Zöld</option>
+          <option value="Sárga">Sárga</option>
+        </select>
+      </label>
       <button id="btnJoin">Csatlakozás</button>
       <div id="joinError" class="error"></div>
     </div>
 
-    <div id="gameCard" class="card hidden">
+    <div id="gameCard" class="card hidden" style="position:relative">
       <div id="qText" class="question"></div>
       <div id="choices" class="choices"></div>
       <div id="timer" class="timer"></div>
   <div class="timebar"><div id="timebarPlayer" class="timebar-fill" style="width:100%"></div></div>
       <div id="status" class="status"></div>
+      <div id="pausedOverlay" style="display:none; position:absolute; inset:0; backdrop-filter: blur(6px); background: rgba(0,0,0,0.35); color:#fff; align-items:center; justify-content:center; font-weight:600;">
+        Szünet — várj a folytatásra…
+      </div>
     </div>
 
     <div id="finalCard" class="card hidden">

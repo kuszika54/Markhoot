@@ -19,6 +19,12 @@
         <label>Egyedi kérdések (JSON): <input type="file" id="fileQuestions" accept="application/json" /></label>
         <button id="btnUpload">Feltölt</button>
       </div>
+      <div class="settings" style="margin-top:10px; display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:10px; align-items:center">
+        <label><input type="checkbox" id="setTeam" /> Csapat mód</label>
+        <label><input type="checkbox" id="setShuffle" checked /> Válaszok keverése</label>
+        <label>Időtartam (mp): <input type="number" id="setDuration" value="30" min="5" max="120" style="width:80px"/></label>
+        <button id="btnApplySettings" class="button">Beállítások mentése</button>
+      </div>
     </section>
 
     <section class="card">
@@ -32,9 +38,12 @@
       <div id="question"></div>
   <div id="progress"></div>
   <div class="timebar"><div id="timebarHost" class="timebar-fill" style="width:100%"></div></div>
+  <div id="chart" style="margin:8px 0; display:grid; grid-template-columns:repeat(4,1fr); gap:8px"></div>
       <div class="controls">
         <button id="btnStart">Start</button>
         <button id="btnNext">Következő</button>
+        <button id="btnPause">Szünet</button>
+        <button id="btnResume">Folytatás</button>
         <a id="btnExport" href="/api/export.csv">Eredmények CSV</a>
       </div>
     </section>

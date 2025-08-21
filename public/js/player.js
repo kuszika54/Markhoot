@@ -5,6 +5,7 @@ const gameCard = document.getElementById('gameCard');
 const nameEl = document.getElementById('name');
 const pinEl = document.getElementById('pin');
 const btnJoin = document.getElementById('btnJoin');
+const teamSelect = document.getElementById('team');
 const joinError = document.getElementById('joinError');
 
 const qText = document.getElementById('qText');
@@ -30,7 +31,9 @@ function hide(el){ el.classList.add('hidden'); }
 btnJoin.onclick = () => {
   const name = nameEl.value.trim();
   const code = pinEl.value.trim();
-  socket.emit('player:join', { name, code });
+  let team = teamSelect ? (teamSelect.value || undefined) : undefined;
+  if (team) team = team.toLowerCase();
+  socket.emit('player:join', { name, code, team });
 };
 
 socket.on('player:error', ({ message }) => {
@@ -56,6 +59,7 @@ socket.on('round:start', ({ question, endsAt: eEndsAt, index, total }) => {
   });
   startTimer();
   statusEl.textContent = '';
+  if (pausedOverlay) pausedOverlay.style.display = 'none';
 });
 
 socket.on('round:end', ({ correctIndex, fastestCorrect }) => {
@@ -69,6 +73,18 @@ socket.on('round:end', ({ correctIndex, fastestCorrect }) => {
     statusEl.textContent = `Leggyorsabb helyes: ${fastestCorrect.name} (${(fastestCorrect.timeMs/1000).toFixed(2)} mp)`;
   }
   answered = true;
+});
+
+// Pause/Resume overlays if present
+const pausedOverlay = document.getElementById('pausedOverlay');
+socket.on('round:paused', () => {
+  stopTimer();
+  if (pausedOverlay) pausedOverlay.style.display = 'flex';
+});
+socket.on('round:resumed', ({ endsAt: eEndsAt }) => {
+  endsAt = eEndsAt;
+  if (pausedOverlay) pausedOverlay.style.display = 'none';
+  startTimer();
 });
 
 function sendAnswer(i, el) {

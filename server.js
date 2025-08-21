@@ -17,17 +17,30 @@ const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 const RESULTS_AUTO_ADVANCE_MS = 3000; // time to show results before next question
 
+// Host-configurable settings
+let settings = {
+  teamMode: false,
+  shuffleChoices: true,
+  baseDuration: 30
+};
+
 // In-memory game state
 let lobbyCode = generatePin();
 let hostSocketId = null;
-let players = new Map(); // socketId -> { name, score, answeredAt, lastAnswerCorrect, lastAnswerTimeMs }
+let players = new Map(); // socketId -> { name, score, team, answeredAt, lastAnswerCorrect, lastAnswerTimeMs, streak }
 let questions = [];
 let game = {
   status: 'idle', // idle | in-progress | showing-results | finished
   currentQuestionIndex: -1,
   questionEndsAt: null,
   fastestCorrect: null, // { socketId, name, timeMs }
-  history: [] // per round stats
+  history: [], // per round stats
+  currentDisplay: null, // per-round shuffled question for display { text, choices, durationSeconds, correctIndex }
+  counts: [0,0,0,0],
+  paused: false,
+  remainingMs: null,
+  answers: [], // per-answer details { q: index, socketId, name, choiceIndex, correct, timeMs, team }
+  roundParticipants: null // Set of socketIds present at round start
 };
 
 // Static files
@@ -90,15 +103,32 @@ io.on('connection', (socket) => {
     io.to(socket.id).emit('game:state', publicGameState());
   });
 
-  socket.on('player:join', ({ name, code }) => {
+  socket.on('player:join', ({ name, code, team }) => {
     if (String(code) !== String(lobbyCode)) {
       return socket.emit('player:error', { message: 'Hibás PIN' });
     }
     if (players.size >= 50) {
       return socket.emit('player:error', { message: 'Betelt a szoba (max 50)' });
     }
-    const cleanName = String(name || '').trim().slice(0, 20) || `Játékos${players.size+1}`;
-    players.set(socket.id, { name: cleanName, score: 0, answeredAt: null, lastAnswerCorrect: false, lastAnswerTimeMs: null });
+    let cleanName = String(name || '').trim().slice(0, 20) || `Játékos${players.size+1}`;
+    // ensure unique name
+    const existing = new Set(Array.from(players.values()).map(p => p.name));
+    if (existing.has(cleanName)) {
+      let i = 2;
+      while (existing.has(`${cleanName} (${i})`)) i++;
+      cleanName = `${cleanName} (${i})`;
+    }
+    let assignedTeam = null;
+    if (settings.teamMode) {
+      const allowed = ['piros','kék','zöld','sárga'];
+      if (allowed.includes(team)) assignedTeam = team; else {
+        // auto-balance teams
+        const counts = { piros:0, kék:0, zöld:0, sárga:0 };
+        players.forEach(p => { if (p.team && counts[p.team] !== undefined) counts[p.team]++; });
+        assignedTeam = Object.entries(counts).sort((a,b)=>a[1]-b[1])[0][0];
+      }
+    }
+    players.set(socket.id, { name: cleanName, score: 0, team: assignedTeam, answeredAt: null, lastAnswerCorrect: false, lastAnswerTimeMs: null, streak: 0 });
     socket.emit('player:joined', { name: cleanName });
     io.emit('lobby:players', publicPlayers());
   });
@@ -117,6 +147,37 @@ io.on('connection', (socket) => {
     if (!isHost(socket)) return;
     if (game.status !== 'in-progress' && game.status !== 'showing-results') return;
     nextQuestion();
+  });
+
+  socket.on('host:set-settings', (newSettings) => {
+    if (!isHost(socket)) return;
+    settings = { ...settings, ...pick(newSettings, ['teamMode','shuffleChoices','baseDuration']) };
+    io.emit('settings:update', settings);
+  });
+
+  socket.on('host:pause', () => {
+    if (!isHost(socket)) return;
+    if (game.status !== 'in-progress' || game.paused) return;
+    game.paused = true;
+    game.remainingMs = Math.max(0, (game.questionEndsAt || Date.now()) - Date.now());
+    game.questionEndsAt = null;
+    io.emit('round:paused');
+  });
+
+  socket.on('host:resume', () => {
+    if (!isHost(socket)) return;
+    if (game.status !== 'in-progress' || !game.paused) return;
+    game.paused = false;
+    game.questionEndsAt = Date.now() + (game.remainingMs || 0);
+    io.emit('round:resumed', { endsAt: game.questionEndsAt });
+  // emit progress after resume and rely on watchdog + primary timeout
+  io.emit('round:progress', roundProgress());
+  });
+
+  socket.on('host:kick', ({ socketId }) => {
+    if (!isHost(socket)) return;
+    const s = io.sockets.sockets.get(socketId);
+    if (s) s.disconnect(true);
   });
 
   socket.on('host:reset-pin', () => {
@@ -141,33 +202,44 @@ io.on('connection', (socket) => {
   socket.on('player:answer', ({ choiceIndex }) => {
     const p = players.get(socket.id);
     if (!p) return;
-    const q = questions[game.currentQuestionIndex];
-    if (!q) return;
-  if (!game.questionEndsAt || Date.now() > game.questionEndsAt) return; // too late
-  if (game.status !== 'in-progress') return; // round already ended
+    const disp = game.currentDisplay;
+    if (!disp) return;
+    if (game.paused) return; // paused, ignore
+    if (!game.questionEndsAt || Date.now() > game.questionEndsAt) return; // too late
+    if (game.status !== 'in-progress') return; // round already ended
 
     // If already answered, ignore
     if (p.answeredAt && p.answeredAt.roundIndex === game.currentQuestionIndex) return;
 
-    const correct = Number(choiceIndex) === q.correctIndex;
-    const timeMs = Math.max(0, q.durationSeconds * 1000 - Math.max(0, game.questionEndsAt - Date.now()));
+  const correct = Number(choiceIndex) === disp.correctIndex;
+  const now = Date.now();
+  const elapsed = Math.max(0, (disp.durationSeconds * 1000) - Math.max(0, (game.questionEndsAt - now)));
+  const timeMs = elapsed;
 
     p.answeredAt = { at: Date.now(), roundIndex: game.currentQuestionIndex };
     p.lastAnswerCorrect = correct;
     p.lastAnswerTimeMs = timeMs;
     if (correct) {
       p.score += 1; // base point
+      p.streak = (p.streak || 0) + 1;
+      if (p.streak >= 3) p.score += 0.5; // streak bonus
       // Track fastest correct
-      const elapsed = q.durationSeconds * 1000 - (game.questionEndsAt - Date.now());
       if (!game.fastestCorrect || elapsed < game.fastestCorrect.timeMs) {
         game.fastestCorrect = { socketId: socket.id, name: p.name, timeMs: elapsed };
       }
+    } else {
+      p.streak = 0;
     }
 
-    const progress = roundProgress();
+    // track counts and answers
+    game.counts[choiceIndex] = (game.counts[choiceIndex] || 0) + 1;
+    game.answers.push({ q: game.currentQuestionIndex, socketId: socket.id, name: p.name, choiceIndex, correct, timeMs, team: p.team });
+
+  const progress = roundProgress();
     io.emit('round:progress', progress);
-    // If everyone answered, end early
-    if (players.size > 0 && progress.answered >= players.size && game.status === 'in-progress') {
+    io.emit('round:counts', { counts: game.counts });
+  // If all round participants answered, end early
+  if (progress.total > 0 && progress.answered >= progress.total && game.status === 'in-progress') {
       endQuestion();
     }
   });
@@ -178,6 +250,15 @@ io.on('connection', (socket) => {
     }
     if (players.has(socket.id)) {
       players.delete(socket.id);
+      // If player was part of current round participants, remove and re-evaluate progress
+      if (game.roundParticipants && game.roundParticipants.has(socket.id)) {
+        game.roundParticipants.delete(socket.id);
+        if (game.status === 'in-progress') {
+          const progress = roundProgress();
+          io.emit('round:progress', progress);
+          if (progress.total > 0 && progress.answered >= progress.total) endQuestion();
+        }
+      }
       io.emit('lobby:players', publicPlayers());
     }
   });
@@ -203,32 +284,63 @@ function nextQuestion() {
 
   const q = questions[game.currentQuestionIndex];
   game.status = 'in-progress';
-  game.questionEndsAt = Date.now() + q.durationSeconds * 1000;
+  const duration = (settings.baseDuration && Number.isFinite(settings.baseDuration)) ? Number(settings.baseDuration) : (q.durationSeconds || 30);
+  // shuffle choices if enabled
+  let display = { text: q.text, choices: q.choices.slice(), durationSeconds: duration, correctIndex: q.correctIndex };
+  if (settings.shuffleChoices) {
+    const idx = [0,1,2,3];
+    for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+    display.choices = idx.map(i => q.choices[i]);
+    display.correctIndex = idx.indexOf(q.correctIndex);
+  }
+  game.currentDisplay = display;
+  game.questionEndsAt = Date.now() + display.durationSeconds * 1000;
+  game.paused = false;
+  game.remainingMs = null;
+  game.counts = [0,0,0,0];
+  // Snapshot round participants (only players present at start count toward early-end)
+  game.roundParticipants = new Set(Array.from(players.keys()));
 
   // reset per-player round flags
   players.forEach(p => { p.answeredAt = null; p.lastAnswerCorrect = false; p.lastAnswerTimeMs = null; });
 
-  io.emit('round:start', { index: game.currentQuestionIndex, total: questions.length, question: publicQuestion(q), endsAt: game.questionEndsAt });
+  io.emit('round:start', { index: game.currentQuestionIndex, total: questions.length, question: publicQuestion(game.currentDisplay), endsAt: game.questionEndsAt });
+  // Emit initial progress so host shows 0/N
+  io.emit('round:progress', roundProgress());
 
-  // Timer to auto close question
+  // Timer to auto close question (primary timeout)
   setTimeout(() => {
     if (game.currentQuestionIndex < 0) return;
-    if (Date.now() >= game.questionEndsAt) {
+    if (!game.paused && Date.now() >= (game.questionEndsAt || 0)) {
       endQuestion();
     }
-  }, q.durationSeconds * 1000 + 50);
+  }, display.durationSeconds * 1000 + 50);
+
+  // Watchdog: in case of clock skew or missed timeout, poll every 500ms
+  if (game._watchdog) clearInterval(game._watchdog);
+  game._watchdog = setInterval(() => {
+    if (game.status !== 'in-progress') return; 
+    if (!game.paused && Date.now() >= (game.questionEndsAt || 0)) {
+      clearInterval(game._watchdog);
+      endQuestion();
+    }
+  }, 500);
 }
 
 function endQuestion() {
+  if (game.status !== 'in-progress') return; // already ended or not in a question
+  if (game._watchdog) { clearInterval(game._watchdog); game._watchdog = null; }
   // finalize round and show results
   finalizeRound();
   game.status = 'showing-results';
   const endedIndex = game.currentQuestionIndex;
   io.emit('round:end', {
     index: game.currentQuestionIndex,
-    correctIndex: questions[game.currentQuestionIndex]?.correctIndex,
+  correctIndex: game.currentDisplay?.correctIndex,
     fastestCorrect: game.fastestCorrect,
-    leaderboard: leaderboard()
+  leaderboard: leaderboard(),
+  teamboard: settings.teamMode ? teamLeaderboard() : null,
+  counts: game.counts
   });
   // Auto-advance after a short delay
   setTimeout(() => {
@@ -249,26 +361,25 @@ function finalizeRound() {
   // save round stats
   const stats = {
     index: game.currentQuestionIndex,
-    correctIndex: q.correctIndex,
-    counts: [0,0,0,0],
+  correctIndex: game.currentDisplay?.correctIndex ?? q.correctIndex,
+  counts: game.counts.slice(),
     fastestCorrect: game.fastestCorrect
   };
-  players.forEach(p => {
-    if (Number.isInteger(p.lastAnswerTimeMs)) {
-      // We didn't store which choice they picked; aggregate via correctness approximated not precise per choice.
-    }
-  });
   game.history.push(stats);
 }
 
 function roundProgress() {
-  const answered = Array.from(players.values()).filter(p => p.answeredAt && p.answeredAt.roundIndex === game.currentQuestionIndex).length;
-  const total = players.size;
+  const participants = game.roundParticipants ? Array.from(game.roundParticipants) : Array.from(players.keys());
+  const answered = participants.filter(id => {
+    const p = players.get(id);
+    return p && p.answeredAt && p.answeredAt.roundIndex === game.currentQuestionIndex;
+  }).length;
+  const total = participants.length;
   return { answered, total };
 }
 
 function publicPlayers() {
-  return Array.from(players.entries()).map(([socketId, p]) => ({ id: socketId, name: p.name, score: p.score }));
+  return Array.from(players.entries()).map(([socketId, p]) => ({ id: socketId, name: p.name, score: p.score, team: p.team }));
 }
 
 function publicQuestion(q) {
@@ -292,8 +403,28 @@ function leaderboard() {
     .slice(0, 50);
 }
 
+function teamLeaderboard() {
+  const sums = {};
+  players.forEach(p => { if (p.team) sums[p.team] = (sums[p.team] || 0) + p.score; });
+  return Object.entries(sums).map(([team, score]) => ({ team, score })).sort((a,b)=>b.score-a.score);
+}
+
 function resetGame() {
-  game = { status: 'idle', currentQuestionIndex: -1, questionEndsAt: null, fastestCorrect: null, history: [] };
+  if (game._watchdog) { try { clearInterval(game._watchdog); } catch {} }
+  game = {
+    status: 'idle',
+    currentQuestionIndex: -1,
+    questionEndsAt: null,
+    fastestCorrect: null,
+    history: [],
+    currentDisplay: null,
+    counts: [0,0,0,0],
+    paused: false,
+    remainingMs: null,
+    answers: [],
+    roundParticipants: null,
+    _watchdog: null
+  };
   players.forEach(p => { p.score = 0; p.answeredAt = null; p.lastAnswerCorrect = false; p.lastAnswerTimeMs = null; });
 }
 
@@ -313,15 +444,44 @@ function getLocalIPs() {
 }
 
 function exportCSV() {
-  const header = 'Name,Score\n';
-  const rows = leaderboard().map(r => `${csvEsc(r.name)},${r.score}`);
-  return header + rows.join('\n');
+  const totalQ = questions.length;
+  const playersArr = Array.from(players.values()).map(p => p.name);
+  // Build per player per question answers
+  const byPlayer = new Map();
+  players.forEach((p, id) => byPlayer.set(id, { name: p.name, score: p.score, answers: Array(totalQ).fill(null), times: Array(totalQ).fill(null), teams: p.team }));
+  game.answers.forEach(a => {
+    const entry = byPlayer.get(a.socketId);
+    if (entry && a.q >= 0 && a.q < totalQ) {
+      entry.answers[a.q] = a.choiceIndex;
+      entry.times[a.q] = a.timeMs;
+    }
+  });
+  const letters = ['A','B','C','D'];
+  let header = ['Name','Team','Score'];
+  for (let i=0;i<totalQ;i++) header.push(`Q${i+1} Ans`, `Q${i+1} TimeMs`);
+  const lines = [header.join(',')];
+  byPlayer.forEach((entry) => {
+    const row = [csvEsc(entry.name), csvEsc(entry.teams||''), entry.score];
+    for (let i=0;i<totalQ;i++) {
+      const ans = entry.answers[i];
+      row.push(ans == null ? '' : letters[ans]);
+      row.push(entry.times[i] == null ? '' : entry.times[i]);
+    }
+    lines.push(row.join(','));
+  });
+  return lines.join('\n');
 }
 
 function csvEsc(s) {
   const str = String(s);
   if (/[",\n]/.test(str)) return '"' + str.replace(/"/g, '""') + '"';
   return str;
+}
+
+function pick(obj, keys) {
+  const out = {};
+  keys.forEach(k => { if (obj && Object.prototype.hasOwnProperty.call(obj, k)) out[k] = obj[k]; });
+  return out;
 }
 
 server.listen(PORT, () => {
