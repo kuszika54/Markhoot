@@ -1,0 +1,16 @@
+[
+  {
+    "id": "q1",
+    "text": "Mennyi 2 + 2?",
+    "choices": ["3", "4", "5", "22"],
+    "correctIndex": 1,
+    "durationSeconds": 30
+  },
+  {
+    "id": "q2",
+    "text": "Melyik a főváros?",
+    "choices": ["Debrecen", "Budapest", "Pécs", "Szeged"],
+    "correctIndex": 1,
+    "durationSeconds": 30
+  }
+]

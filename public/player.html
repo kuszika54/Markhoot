@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kahoot Lite - Játékos</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Csatlakozás</h1>
+
+    <div id="joinCard" class="card">
+      <label>Név: <input id="name" maxlength="20" /></label>
+      <label>PIN: <input id="pin" maxlength="6" /></label>
+      <button id="btnJoin">Csatlakozás</button>
+      <div id="joinError" class="error"></div>
+    </div>
+
+    <div id="gameCard" class="card hidden">
+      <div id="qText" class="question"></div>
+      <div id="choices" class="choices"></div>
+      <div id="timer" class="timer"></div>
+      <div id="status" class="status"></div>
+    </div>
+
+    <div id="finalCard" class="card hidden">
+      <h2>Top 3</h2>
+      <div class="final">
+        <div class="podium">
+          <div class="place place2">
+            <div class="name" id="pf2Name">—</div>
+            <div class="score" id="pf2Score">—</div>
+            <div class="bar">2.</div>
+          </div>
+          <div class="place place1">
+            <div class="name" id="pf1Name">—</div>
+            <div class="score" id="pf1Score">—</div>
+            <div class="bar">1.</div>
+          </div>
+          <div class="place place3">
+            <div class="name" id="pf3Name">—</div>
+            <div class="score" id="pf3Score">—</div>
+            <div class="bar">3.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/player.js"></script>
+</body>
+</html>

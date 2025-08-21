@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kahoot Lite - Host</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Kvíz Host</h1>
+
+    <section class="card">
+      <h2>Szoba adatai</h2>
+      <div id="lobbyInfo"></div>
+      <button id="btnResetPin">Új PIN</button>
+      <button id="btnLoadSample">Minta kérdések betöltése</button>
+      <div class="upload">
+        <label>Egyedi kérdések (JSON): <input type="file" id="fileQuestions" accept="application/json" /></label>
+        <button id="btnUpload">Feltölt</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Játékosok</h2>
+      <ul id="players"></ul>
+    </section>
+
+    <section class="card">
+      <h2>Játék</h2>
+      <div id="gameState"></div>
+      <div id="question"></div>
+      <div id="progress"></div>
+      <div class="controls">
+        <button id="btnStart">Start</button>
+        <button id="btnNext">Következő</button>
+        <a id="btnExport" href="/api/export.csv">Eredmények CSV</a>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Csatlakozás</h2>
+      <p>Játékos URL: <span id="joinUrl"></span></p>
+      <p>PIN: <span id="pin"></span></p>
+      <p>IP címek: <span id="ips"></span></p>
+      <div style="margin-top:8px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <img id="qr" src="/api/join-qr" alt="QR kód" style="background:#fff;border-radius:8px;padding:6px" />
+        <small>Nyisd meg a kamerát és szkenneld a QR-t a csatlakozáshoz.</small>
+      </div>
+    </section>
+
+    <section id="finalCard" class="card hidden">
+      <h2>Top 3</h2>
+      <div class="final">
+        <div class="podium">
+          <div class="place place2">
+            <div class="name" id="final2Name">—</div>
+            <div class="score" id="final2Score">—</div>
+            <div class="bar">2.</div>
+          </div>
+          <div class="place place1">
+            <div class="name" id="final1Name">—</div>
+            <div class="score" id="final1Score">—</div>
+            <div class="bar">1.</div>
+          </div>
+          <div class="place place3">
+            <div class="name" id="final3Name">—</div>
+            <div class="score" id="final3Score">—</div>
+            <div class="bar">3.</div>
+          </div>
+        </div>
+      </div>
+      <div class="controls" style="margin-top:12px">
+        <a class="button" href="/api/export.csv">Eredmények CSV</a>
+      </div>
+    </section>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/host.js"></script>
+</body>
+</html>

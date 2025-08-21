@@ -1,0 +1,17 @@
+{
+  "name": "kahoot-lite",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Egyszerű, helyi hálózaton futó, Kahoot-szerű kvíz app",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "NODE_ENV=development node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.7.5"
+  }
+}
