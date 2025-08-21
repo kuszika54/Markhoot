@@ -104,3 +104,16 @@ socket.on('game:final', ({ leaderboard }) => {
   if (top[1]) { pf2Name.textContent = top[1].name; pf2Score.textContent = `${top[1].score} pont`; }
   if (top[2]) { pf3Name.textContent = top[2].name; pf3Score.textContent = `${top[2].score} pont`; }
 });
+
+// Auto-fill PIN from URL (QR) and hide the PIN input if present
+(function initFromUrl(){
+  const params = new URLSearchParams(window.location.search);
+  const pin = params.get('pin');
+  if (pin) {
+    pinEl.value = pin;
+    // Hide the PIN field to simplify the join flow via QR
+    const pinWrapper = pinEl.closest('label') || pinEl;
+    if (pinWrapper) pinWrapper.style.display = 'none';
+  }
+  nameEl.focus();
+})();

@@ -84,3 +84,11 @@ li{padding:8px 0;border-bottom:1px solid var(--glass-border); color:var(--muted)
 .place1 .bar{height:130px}
 .place2 .bar{height:90px}
 .place3 .bar{height:70px}
+
+/* Top navigation */
+.topnav{position:sticky;top:0;z-index:100;background:var(--glass);backdrop-filter:blur(8px);border-bottom:1px solid var(--glass-border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-weight:800;letter-spacing:.5px}
+.nav-links{display:flex;gap:10px;flex-wrap:wrap}
+.nav-links a{color:var(--text);text-decoration:none;padding:8px 12px;border-radius:10px;border:1px solid transparent}
+.nav-links a:hover{background:rgba(255,255,255,0.06);border-color:var(--glass-border)}
+.nav-links a.active{background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#0a0f1c}
