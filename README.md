@@ -21,6 +21,8 @@ npm start
 3) A host gépen nyisd meg a böngészőt: `http://localhost:3000/host`.
 4) A játékosok ugyanazon a LAN-on a host képernyőjén látható IP:port és PIN segítségével csatlakoznak.
 
+Kérdés Builder (JSON szerkesztő): `http://localhost:3000/builder` — itt kérdéssorokat hozhatsz létre, exportálhatod JSON-ként, vagy egy kattintással feltöltheted a szerverre.
+
 ## Kérdések
 
 - Minta fájl: `questions.sample.json` (magyar példa).

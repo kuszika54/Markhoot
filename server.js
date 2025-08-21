@@ -51,6 +51,7 @@ app.use(express.json({ limit: '1mb' }));
 app.get('/', (_req, res) => res.redirect('/host'));
 app.get('/host', (_req, res) => res.sendFile(path.join(__dirname, 'public/host.html')));
 app.get('/player', (_req, res) => res.sendFile(path.join(__dirname, 'public/player.html')));
+app.get('/builder', (_req, res) => res.sendFile(path.join(__dirname, 'public/builder.html')));
 
 // Questions management
 app.get('/api/questions', (_req, res) => {
@@ -80,10 +81,21 @@ app.get('/api/export.csv', (_req, res) => {
   res.send(csv);
 });
 
+// Serve sample questions for the builder UI
+app.get('/api/sample-questions', (_req, res) => {
+  try {
+    const p = path.join(__dirname, 'questions.sample.json');
+    const arr = JSON.parse(fs.readFileSync(p, 'utf-8'));
+    res.json(arr);
+  } catch (e) {
+    res.status(404).json({ error: 'Sample not found' });
+  }
+});
+
 app.get('/api/join-qr', async (req, res) => {
   const ips = getLocalIPs();
   const base = ips[0] ? `http://${ips[0]}:${PORT}` : `http://localhost:${PORT}`;
-  const url = `${base}/player`;
+  const url = `${base}/player?pin=${encodeURIComponent(lobbyCode)}`;
   try {
     const png = await QRCode.toBuffer(url, { type: 'png', margin: 1, width: 256 });
     res.setHeader('Content-Type', 'image/png');

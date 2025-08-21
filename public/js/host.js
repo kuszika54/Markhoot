@@ -40,7 +40,8 @@ let timerInterval = null;
 function renderLobby({ lobbyCode, ips, port }) {
   pinEl.textContent = lobbyCode;
   ipsEl.textContent = ips.join(', ');
-  const url = ips.length ? `http://${ips[0]}:${port}/player` : `http://localhost:${port}/player`;
+  const urlBase = ips.length ? `http://${ips[0]}:${port}/player` : `http://localhost:${port}/player`;
+  const url = `${urlBase}?pin=${encodeURIComponent(lobbyCode)}`;
   joinUrlEl.textContent = url;
   lobbyInfo.textContent = `Csatlakozz: ${url} | PIN: ${lobbyCode}`;
 }
