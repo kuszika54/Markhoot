@@ -445,31 +445,41 @@ function generatePin() {
 }
 
 function getLocalIPs() {
-  // If running in Docker, try to get host IPs
+  // If running in Docker with bridge network, we need to get the host's external IP
   if (process.env.HOST_NETWORK) {
-    // In Docker, we'll use the host's network interface
-    // This requires running with --network host or using host.docker.internal
-    const nets = os.networkInterfaces();
-    const results = [];
-    
-    // Try to find non-docker, non-localhost IPs
-    for (const name of Object.keys(nets)) {
-      // Skip docker and virtual interfaces
-      if (name.includes('docker') || name.includes('veth') || name.includes('br-')) continue;
+    try {
+      // Try to get the host's IP from the default gateway
+      const nets = os.networkInterfaces();
+      const results = [];
       
-      for (const net of nets[name] || []) {
-        if (net.family === 'IPv4' && !net.internal) {
-          results.push(net.address);
+      // Look for the docker bridge gateway (usually the host IP from container perspective)
+      if (nets.eth0) {
+        // In bridge network, try to determine host IP from gateway
+        // This is a workaround - ideally pass HOST_IP as env variable
+        const gateway = nets.eth0.find(net => net.family === 'IPv4' && !net.internal);
+        if (gateway) {
+          // Extract host IP from container's gateway (usually .1)
+          const parts = gateway.address.split('.');
+          if (parts.length === 4) {
+            // Try common host IP patterns
+            const hostIP = `${parts[0]}.${parts[1]}.${parts[2]}.1`;
+            results.push(hostIP);
+          }
         }
       }
+      
+      // Fallback: try to read from environment or use a common pattern
+      if (results.length === 0) {
+        // You should set this as environment variable on the Docker host
+        const hostIP = process.env.HOST_IP || '10.36.10.20'; // Use your actual host IP
+        results.push(hostIP);
+      }
+      
+      return results;
+    } catch (error) {
+      console.log('Could not determine host IP, using fallback');
+      return ['10.36.10.20']; // Your actual host IP as fallback
     }
-    
-    // If no IPs found, fallback to localhost for local testing
-    if (results.length === 0) {
-      results.push('localhost');
-    }
-    
-    return results;
   }
   
   // Original implementation for non-Docker environments

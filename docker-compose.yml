@@ -5,4 +5,5 @@ services:
       - "3000:3000"
     environment:
       - HOST_NETWORK=true
+      - HOST_IP=10.36.10.20
     restart: unless-stopped
