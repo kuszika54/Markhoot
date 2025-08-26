@@ -5,5 +5,4 @@ services:
       - "3000:3000"
     environment:
       - HOST_NETWORK=true
-    network_mode: "host"
     restart: unless-stopped
