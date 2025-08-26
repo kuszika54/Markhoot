@@ -60,9 +60,26 @@ app.get('/api/questions', (_req, res) => {
 
 app.post('/api/questions', (req, res) => {
   const body = req.body;
+  console.log('Received questions payload:', JSON.stringify(body, null, 2));
+  
   if (!Array.isArray(body)) return res.status(400).json({ error: 'Array of questions expected' });
-  // Basic validation
-  const ok = body.every(q => q && typeof q.text === 'string' && Array.isArray(q.choices) && q.choices.length === 4 && Number.isInteger(q.correctIndex));
+  
+  // Basic validation with detailed logging
+  const ok = body.every((q, index) => {
+    const valid = q && typeof q.text === 'string' && Array.isArray(q.choices) && q.choices.length === 4 && Number.isInteger(q.correctIndex);
+    if (!valid) {
+      console.log(`Question ${index} validation failed:`, {
+        hasQ: !!q,
+        hasText: q && typeof q.text === 'string',
+        hasChoices: q && Array.isArray(q.choices),
+        choicesLength: q && q.choices ? q.choices.length : 'no choices',
+        hasCorrectIndex: q && Number.isInteger(q.correctIndex),
+        question: q
+      });
+    }
+    return valid;
+  });
+  
   if (!ok) return res.status(400).json({ error: 'Invalid question format' });
   questions = body.map((q, idx) => ({ id: q.id || `q${idx+1}`, durationSeconds: 30, ...q }));
   resetGame();
