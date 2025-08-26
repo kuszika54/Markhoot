@@ -445,34 +445,33 @@ function generatePin() {
 }
 
 function getLocalIPs() {
-  // If running in Docker with bridge network, we need to get the host's external IP
+  // If running in Docker with bridge network, use the HOST_IP environment variable
+  if (process.env.HOST_NETWORK && process.env.HOST_IP) {
+    return [process.env.HOST_IP];
+  }
+  
+  // If running in Docker but no HOST_IP set, try to detect
   if (process.env.HOST_NETWORK) {
     try {
-      // Try to get the host's IP from the default gateway
       const nets = os.networkInterfaces();
       const results = [];
       
       // Look for the docker bridge gateway (usually the host IP from container perspective)
       if (nets.eth0) {
-        // In bridge network, try to determine host IP from gateway
-        // This is a workaround - ideally pass HOST_IP as env variable
         const gateway = nets.eth0.find(net => net.family === 'IPv4' && !net.internal);
         if (gateway) {
           // Extract host IP from container's gateway (usually .1)
           const parts = gateway.address.split('.');
           if (parts.length === 4) {
-            // Try common host IP patterns
             const hostIP = `${parts[0]}.${parts[1]}.${parts[2]}.1`;
             results.push(hostIP);
           }
         }
       }
       
-      // Fallback: try to read from environment or use a common pattern
+      // Fallback to a reasonable default
       if (results.length === 0) {
-        // You should set this as environment variable on the Docker host
-        const hostIP = process.env.HOST_IP || '10.36.10.20'; // Use your actual host IP
-        results.push(hostIP);
+        results.push('10.36.10.20'); // Your actual host IP as fallback
       }
       
       return results;
@@ -536,5 +535,9 @@ function pick(obj, keys) {
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://localhost:${PORT}`);
-  console.log('Elérhető LAN IP-k:', getLocalIPs().map(ip => `http://${ip}:${PORT}`).join(', '));
+  console.log(`HOST_NETWORK env: ${process.env.HOST_NETWORK}`);
+  console.log(`HOST_IP env: ${process.env.HOST_IP}`);
+  const ips = getLocalIPs();
+  console.log('Detected IPs:', ips);
+  console.log('Elérhető LAN IP-k:', ips.map(ip => `http://${ip}:${PORT}`).join(', '));
 });
