@@ -210,9 +210,22 @@ btnUpload.onclick = async () => {
   const text = await f.text();
   try {
     const arr = JSON.parse(text);
-    await fetch('/api/questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(arr) });
+    const response = await fetch('/api/questions', { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify(arr) 
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Upload error:', response.status, errorText);
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+    const result = await response.json();
+    console.log('Upload successful:', result);
+    alert(`Sikeresen feltöltve: ${result.count} kérdés`);
   } catch (e) {
-    alert('Érvénytelen JSON');
+    console.error('Upload failed:', e);
+    alert(`Érvénytelen JSON vagy szerver hiba: ${e.message}`);
   }
 };
 

@@ -89,9 +89,20 @@ function sendToServer() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(state.questions)
   }).then(res => {
-    if (!res.ok) throw new Error('Hiba a feltöltésnél');
+    if (!res.ok) {
+      return res.text().then(errorText => {
+        console.error('Server error:', res.status, errorText);
+        throw new Error(`HTTP ${res.status}: ${errorText}`);
+      });
+    }
+    return res.json();
+  }).then(data => {
+    console.log('Upload successful:', data);
     alert('Kérdések feltöltve. Válts a Host oldalra és indítsd a játékot.');
-  }).catch(()=>alert('Nem sikerült feltölteni. Ellenőrizd a szervert.'));
+  }).catch(error => {
+    console.error('Upload failed:', error);
+    alert(`Nem sikerült feltölteni: ${error.message}`);
+  });
 }
 
 function editQuestion(idx) {
