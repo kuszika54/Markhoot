@@ -1,1 +1,152 @@
-.
+[
+  {
+    "text": "Mi a git alapértelmezett branch neve?",
+    "choices": ["master", "main", "develop", "trunk"],
+    "correctIndex": 1
+  },
+  {
+    "text": "Melyik paranccsal hozol létre új repót?",
+    "choices": ["git new", "git create", "git init", "git start"],
+    "correctIndex": 2
+  },
+  {
+    "text": "Melyik paranccsal adsz hozzá fájlt a staginghez?",
+    "choices": ["git add", "git stage", "git push", "git commit"],
+    "correctIndex": 0
+  },
+  {
+    "text": "Melyik paranccsal mented el a változásokat?",
+    "choices": ["git save", "git commit", "git push", "git update"],
+    "correctIndex": 1
+  },
+  {
+    "text": "Melyik paranccsal küldöd fel a változásokat a távoli repóba?",
+    "choices": ["git send", "git push", "git upload", "git fetch"],
+    "correctIndex": 1
+  },
+  {
+    "text": "Melyik paranccsal töltöd le a távoli repó változásait?",
+    "choices": ["git pull", "git fetch", "git clone", "git update"],
+    "correctIndex": 0
+  },
+  {
+    "text": "Melyik paranccsal hozol létre új branch-et?",
+    "choices": ["git branch", "git new-branch", "git create", "git checkout"],
+    "correctIndex": 0
+  },
+  {
+    "text": "Melyik paranccsal váltasz branch-et?",
+    "choices": ["git switch", "git change", "git checkout", "git move"],
+    "correctIndex": 2
+  },
+  {
+    "text": "Melyik paranccsal nézed meg a commitok listáját?",
+    "choices": ["git log", "git history", "git commits", "git list"],
+    "correctIndex": 0
+  },
+  {
+    "text": "Melyik paranccsal törölsz branch-et?",
+    "choices": ["git branch -d", "git delete", "git remove", "git drop"],
+    "correctIndex": 0
+  },
+  {
+    "text": "Mi a staging area?",
+    "choices": ["A távoli repó", "A commitok listája", "A commit előtti gyűjtő", "A branch neve"],
+    "correctIndex": 2
+  },
+  {
+    "text": "Melyik paranccsal klónozol repót?",
+    "choices": ["git copy", "git clone", "git fetch", "git pull"],
+    "correctIndex": 1
+  },
+  {
+    "text": "Melyik paranccsal nézed meg a jelenlegi branch nevét?",
+    "choices": ["git branch", "git status", "git current", "git show"],
+    "correctIndex": 0
+  },
+  {
+    "text": "Melyik paranccsal nézed meg a módosított fájlokat?",
+    "choices": ["git status", "git log", "git diff", "git files"],
+    "correctIndex": 0
+  },
+  {
+    "text": "Melyik paranccsal vonod vissza a staginget?",
+    "choices": ["git reset", "git revert", "git undo", "git remove"],
+    "correctIndex": 0
+  },
+  {
+    "text": "Melyik paranccsal vonod vissza egy commitot?",
+    "choices": ["git reset", "git revert", "git undo", "git remove"],
+    "correctIndex": 1
+  },
+  {
+    "text": ".gitignore fájl szerepe?",
+    "choices": ["Branch lista", "Elrejtett commitok", "Kizárt fájlok listája", "Távoli repók listája"],
+    "correctIndex": 2
+  },
+  {
+    "text": "Melyik paranccsal egyesítesz branch-eket?",
+    "choices": ["git merge", "git join", "git combine", "git union"],
+    "correctIndex": 0
+  },
+  {
+    "text": "Melyik paranccsal nézed meg a távoli repókat?",
+    "choices": ["git remote", "git repo", "git show", "git list"],
+    "correctIndex": 0
+  },
+  {
+    "text": "Melyik paranccsal állítod be a felhasználónevet?",
+    "choices": ["git config user.name", "git set name", "git user", "git set-user"],
+    "correctIndex": 0
+  },
+  {
+    "text": "Melyik paranccsal állítod be az email címet?",
+    "choices": ["git config user.email", "git set email", "git user", "git set-user"],
+    "correctIndex": 0
+  },
+  {
+    "text": "Melyik paranccsal nézed meg a fájlok különbségeit?",
+    "choices": ["git diff", "git status", "git log", "git show"],
+    "correctIndex": 0
+  },
+  {
+    "text": "Melyik paranccsal vonod vissza a legutóbbi commitot?",
+    "choices": ["git reset HEAD~1", "git revert HEAD", "git undo", "git remove"],
+    "correctIndex": 0
+  },
+  {
+    "text": "Melyik paranccsal listázod a távoli branch-eket?",
+    "choices": ["git branch -r", "git remote", "git show", "git list"],
+    "correctIndex": 0
+  },
+  {
+    "text": "Melyik paranccsal állítod vissza egy fájlt az utolsó commitból?",
+    "choices": ["git checkout -- <fájl>", "git reset <fájl>", "git revert <fájl>", "git restore <fájl>"],
+    "correctIndex": 0
+  },
+  {
+    "text": "Melyik paranccsal adsz hozzá távoli repót?",
+    "choices": ["git remote add", "git add remote", "git set remote", "git connect"],
+    "correctIndex": 0
+  },
+  {
+    "text": "Melyik paranccsal törölsz távoli repót?",
+    "choices": ["git remote remove", "git remove remote", "git delete remote", "git disconnect"],
+    "correctIndex": 0
+  },
+  {
+    "text": "Melyik paranccsal nézed meg a commit részleteit?",
+    "choices": ["git show", "git log", "git status", "git diff"],
+    "correctIndex": 0
+  },
+  {
+    "text": "Melyik paranccsal vonod vissza a módosításokat egy fájlban?",
+    "choices": ["git checkout -- <fájl>", "git reset <fájl>", "git revert <fájl>", "git restore <fájl>"],
+    "correctIndex": 3
+  },
+  {
+    "text": "Melyik paranccsal állítod be a globális konfigurációt?",
+    "choices": ["git config --global", "git set global", "git global", "git config global"],
+    "correctIndex": 0
+  }
+]

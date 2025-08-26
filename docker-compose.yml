@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  markhoot:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - HOST_NETWORK=true
+    network_mode: "host"
+    restart: unless-stopped

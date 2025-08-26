@@ -16,5 +16,8 @@ COPY . .
 # Expose the port the app runs on
 EXPOSE 3000
 
+# Set host network environment variable
+ENV HOST_NETWORK=true
+
 # Start the server
 CMD ["npm", "start"]

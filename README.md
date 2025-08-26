@@ -10,6 +10,8 @@ Egyszerű, helyi hálózaton futó, böngészős kvíz app (Kahoot-szerű).
 
 ## Futtatás
 
+### Hagyományos módon (Node.js szükséges)
+
 1) Telepítés:
 ```
 npm install
@@ -18,6 +20,23 @@ npm install
 ```
 npm start
 ```
+
+### Docker-rel (ajánlott)
+
+1) Docker képének építése:
+```
+docker build -t markhoot .
+```
+2) Futtatás host hálózattal (LAN elérhetőséghez):
+```
+docker run --network host markhoot
+```
+
+VAGY Docker Compose-zal:
+```
+docker-compose up --build
+```
+
 3) A host gépen nyisd meg a böngészőt: `http://localhost:3000/host`.
 4) A játékosok ugyanazon a LAN-on a host képernyőjén látható IP:port és PIN segítségével csatlakoznak.
 

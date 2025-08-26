@@ -445,6 +445,34 @@ function generatePin() {
 }
 
 function getLocalIPs() {
+  // If running in Docker, try to get host IPs
+  if (process.env.HOST_NETWORK) {
+    // In Docker, we'll use the host's network interface
+    // This requires running with --network host or using host.docker.internal
+    const nets = os.networkInterfaces();
+    const results = [];
+    
+    // Try to find non-docker, non-localhost IPs
+    for (const name of Object.keys(nets)) {
+      // Skip docker and virtual interfaces
+      if (name.includes('docker') || name.includes('veth') || name.includes('br-')) continue;
+      
+      for (const net of nets[name] || []) {
+        if (net.family === 'IPv4' && !net.internal) {
+          results.push(net.address);
+        }
+      }
+    }
+    
+    // If no IPs found, fallback to localhost for local testing
+    if (results.length === 0) {
+      results.push('localhost');
+    }
+    
+    return results;
+  }
+  
+  // Original implementation for non-Docker environments
   const nets = os.networkInterfaces();
   const results = [];
   for (const name of Object.keys(nets)) {
